@@ -1,7 +1,4 @@
-﻿using System;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
+﻿using UnityEngine;
 
 namespace WebGLCD
 {
@@ -15,6 +12,10 @@ public class InitializationManager : MonoBehaviour
 
     private async void Start()
     {
+        #if UNITY_EDITOR
+        Caching.ClearCache();
+        #endif
+
         // try
         // {
         //     const string key = "Core";
