@@ -14,7 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: UI
   m_GUID: 1fbfb68f2b170e34d80e92cd7a5896c7
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 8d4c8236d83bf564b94e159ef4e1202c
+    m_Address: Assets/Textures/UI/Background.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 6abd3334b91de7d4a9cbed4718ad1e01, type: 2}
   m_SchemaSet:
