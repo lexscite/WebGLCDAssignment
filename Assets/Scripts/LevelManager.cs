@@ -1,42 +1,37 @@
 ﻿using Cysharp.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceProviders;
+using VContainer;
 
 namespace WebGLCD
 {
-public class LevelManager : MonoBehaviour
+public class LevelManager
 {
     private const string Dir = "Assets/Scenes/Levels";
 
-    [SerializeField]
+    [Inject]
     private AssetManager _assetManager;
 
-    [SerializeField]
+    [Inject]
     private LoadingOverlayController _loadingOverlayController;
 
-    private AsyncOperationHandle<SceneInstance> _currentLevelSceneHandle;
+    private string _currentLevelSceneKey;
 
     public async UniTask LoadAsync(string levelName)
     {
-        if (_currentLevelSceneHandle.IsValid())
+        _loadingOverlayController.StartLoading();
+
+        if (!string.IsNullOrEmpty(_currentLevelSceneKey))
         {
-            await _assetManager.UnloadSceneAsync(_currentLevelSceneHandle);
+            await _assetManager.UnloadSceneAsync(_currentLevelSceneKey);
         }
 
         var key = $"{Dir}/{levelName}.unity";
-        _currentLevelSceneHandle = _assetManager.LoadSceneAsync(key);
-        _loadingOverlayController.ProcessAsyncOperation(_currentLevelSceneHandle);
-        await _currentLevelSceneHandle.ToUniTask();
+        var handle = _assetManager.LoadScene(key);
+        _loadingOverlayController.SetAsyncOperationHandle(handle);
+        await handle;
 
-        if (_currentLevelSceneHandle.Status == AsyncOperationStatus.Succeeded)
-        {
-            Debug.Log("Scene loaded: " + key);
-        }
-        else
-        {
-            Debug.LogError("Failed to load scene: " + key);
-        }
+        _assetManager.UnloadUnusedAssets();
+
+        _loadingOverlayController.StopLoading();
     }
 }
 }

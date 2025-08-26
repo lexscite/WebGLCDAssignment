@@ -2,10 +2,11 @@
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
+using VContainer;
+using WebGLCD;
 
 namespace UI
 {
-[ExecuteAlways]
 public class AddressableImageResolver : MonoBehaviour
 {
     [SerializeField]
@@ -14,20 +15,17 @@ public class AddressableImageResolver : MonoBehaviour
     [SerializeField]
     public Image _targetImage;
 
+    [Inject]
+    private AssetManager _assetManager;
+
     private AsyncOperationHandle<Sprite> _handle;
 
-    private void OnEnable()
-    {
-        if (Application.isPlaying)
-        {
-            _spriteReference.LoadAssetAsync<Sprite>().Completed += OnSpriteLoaded;
-        }
-    }
+    private void Start() { _assetManager.Load<Sprite>(_spriteReference).Completed += OnSpriteLoaded; }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
-        if (_handle.IsValid()) Addressables.Release(_handle);
-        if (_targetImage != null) _targetImage.sprite = null;
+        _targetImage.sprite = null;
+        _assetManager.Unload(_spriteReference);
     }
 
     private void OnSpriteLoaded(AsyncOperationHandle<Sprite> handle)
