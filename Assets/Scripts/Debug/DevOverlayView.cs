@@ -25,7 +25,7 @@ public class DevOverlayView : MonoBehaviour
             ConsoleEntryType.Warning => $"<color=yellow>{text}</color>",
             _ => text
         };
-
+        
         var needScroll = Mathf.Approximately(_scrollView.normalizedPosition.y, 1f);
         _sb.AppendLine(text);
         _tmpConsole.text = _sb.ToString();

@@ -29,6 +29,8 @@ public class ManagedAsset : ManagedResource
         {
             try
             {
+                attempt++;
+
                 Debug.Log($"Started asset loading (attempt {attempt}): {Key}");
                 await Handle;
 
@@ -59,10 +61,14 @@ public class ManagedAsset : ManagedResource
 
         void OnError()
         {
-            attempt++;
             Count--;
             Addressables.Release(Handle);
         }
+    }
+
+    public void AddReference()
+    {
+        Count++;
     }
 
     public void Release()

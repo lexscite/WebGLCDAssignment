@@ -35,6 +35,7 @@ public class ResourceManager
             return handle;
         }
 
+        asset.AddReference();
         return asset.Handle.Convert<TObject>();
     }
 

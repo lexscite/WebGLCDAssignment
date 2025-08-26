@@ -8,40 +8,25 @@ namespace WebGLCD
 public class LoadingOverlayController : MonoBehaviour
 {
     [SerializeField]
-    private Canvas _canvas;
-
-    [SerializeField]
-    private Button _closeButton;
+    private LoadingOverlayView _view;
 
     [SerializeField]
     private ProgressBarView _progressBar;
 
-    private void Start()
-    {
-        _canvas.enabled = false;
-        _closeButton.gameObject.SetActive(false);
-
-        _closeButton.onClick.AddListener(OnCloseButtonClicked);
-    }
-
-    private void OnDestroy() { _closeButton.onClick.RemoveListener(OnCloseButtonClicked); }
+    private void Start() { _view.Hide(); }
 
     public void StartLoading()
     {
-        _closeButton.gameObject.SetActive(false);
+        _view.SetCloseButtonActive(false);
         _progressBar.SetValue(0f);
-        _canvas.enabled = true;
+        _view.Show();
     }
 
-    public void StopLoading()
-    {
-        _canvas.enabled = true;
-        _closeButton.gameObject.SetActive(true);
-    }
+    public void StopLoading() { _view.SetCloseButtonActive(true); }
 
     public void SetAsyncOperationHandle(AsyncOperationHandle handle) { ProcessAsyncOperationAsync(handle).Forget(); }
 
-    public async UniTaskVoid ProcessAsyncOperationAsync(AsyncOperationHandle handle)
+    private async UniTaskVoid ProcessAsyncOperationAsync(AsyncOperationHandle handle)
     {
         while (!handle.IsDone)
         {
@@ -49,7 +34,5 @@ public class LoadingOverlayController : MonoBehaviour
             await UniTask.Yield();
         }
     }
-
-    private void OnCloseButtonClicked() { _canvas.enabled = false; }
 }
 }

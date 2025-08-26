@@ -30,6 +30,8 @@ public class ManagedScene : ManagedResource
         {
             try
             {
+                attempt++;
+
                 Debug.Log($"Started scene loading (attempt {attempt}): {Key}");
                 await Handle;
 
@@ -60,7 +62,6 @@ public class ManagedScene : ManagedResource
 
         void OnError()
         {
-            attempt++;
             Count--;
             State = ResourceState.Failed;
             Addressables.Release(Handle);

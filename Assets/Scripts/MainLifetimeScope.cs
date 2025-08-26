@@ -14,6 +14,7 @@ public class MainLifetimeScope : LifetimeScope
         builder.Register<ResourceManager>(Lifetime.Singleton);
         builder.Register<LevelManager>(Lifetime.Singleton);
         builder.RegisterComponentInHierarchy<LoadingOverlayController>();
+        builder.RegisterComponentInHierarchy<ErrorPopupController>();
     }
 }
 }
