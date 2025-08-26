@@ -7,6 +7,9 @@ namespace WebGLCD
 {
 public class ManagedAsset : ManagedResource
 {
+    private const int MaxRetries = 3;
+    private const float RetryDelay = 0.5f;
+
     public AsyncOperationHandle Handle { get; }
 
     public ManagedAsset(string key, AsyncOperationHandle handle)
@@ -17,35 +20,48 @@ public class ManagedAsset : ManagedResource
 
     public async UniTask LoadAsync()
     {
-        void OnError()
-        {
-            Count--;
-            State = ResourceState.Failed;
-            Addressables.Release(Handle);
-        }
-
         State = ResourceState.Loading;
+        Count++;
 
-        try
+        var attempt = 0;
+
+        while (attempt < MaxRetries)
         {
-            Count++;
-            await Handle;
-
-            if (Handle.Status == AsyncOperationStatus.Succeeded)
+            try
             {
-                State = ResourceState.Loaded;
-                Debug.Log("Asset loaded: " + Key);
+                Debug.Log($"Started asset loading (attempt {attempt}): {Key}");
+                await Handle;
+
+                if (Handle.Status == AsyncOperationStatus.Succeeded)
+                {
+                    State = ResourceState.Loaded;
+                    Debug.Log("Asset loaded: " + Key);
+                    return;
+                }
+
+                OnError();
+                Debug.LogError("Asset loading error: " + Key);
             }
-            else
+            catch (Exception e)
             {
                 OnError();
-                Debug.LogError("Failed to load asset: " + Key);
+                Debug.LogError($"Asset loading exception {Key}: {e}");
             }
+
+            await UniTask.Delay((int)(RetryDelay * 1000));
         }
-        catch (Exception e)
+
+        OnError();
+        Debug.LogError($"Asset {Key} failed to load after {MaxRetries} attempts");
+        State = ResourceState.Failed;
+
+        return;
+
+        void OnError()
         {
-            OnError();
-            Debug.LogError($"Exception during loading asset {Key}: {e}");
+            attempt++;
+            Count--;
+            Addressables.Release(Handle);
         }
     }
 
