@@ -7,7 +7,7 @@ namespace WebGLCD
 public class Initializer : IStartable
 {
     [Inject]
-    private AssetManager _assetManager;
+    private ResourceManager _resourceManager;
 
     [Inject]
     private LoadingOverlayController _loadingOverlayController;

@@ -8,7 +8,7 @@ public class LevelManager
     private const string Dir = "Assets/Scenes/Levels";
 
     [Inject]
-    private AssetManager _assetManager;
+    private ResourceManager _resourceManager;
 
     [Inject]
     private LoadingOverlayController _loadingOverlayController;
@@ -17,19 +17,26 @@ public class LevelManager
 
     public async UniTask LoadAsync(string levelName)
     {
+        var key = $"{Dir}/{levelName}.unity";
+        if (key == _currentLevelSceneKey)
+        {
+            Debug.LogWarning($"Level \"{levelName}\" has already been loaded");
+            return;
+        }
+
         _loadingOverlayController.StartLoading();
 
         if (!string.IsNullOrEmpty(_currentLevelSceneKey))
         {
-            await _assetManager.UnloadSceneAsync(_currentLevelSceneKey);
+            await _resourceManager.UnloadSceneAsync(_currentLevelSceneKey);
         }
 
-        var key = $"{Dir}/{levelName}.unity";
-        var handle = _assetManager.LoadScene(key);
+        _currentLevelSceneKey = key;
+        var handle = _resourceManager.LoadScene(_currentLevelSceneKey);
         _loadingOverlayController.SetAsyncOperationHandle(handle);
         await handle;
 
-        _assetManager.UnloadUnusedAssets();
+        _resourceManager.UnloadUnusedAssets();
 
         _loadingOverlayController.StopLoading();
     }

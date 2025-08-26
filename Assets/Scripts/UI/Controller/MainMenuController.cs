@@ -17,7 +17,7 @@ public class MainMenuController : MonoBehaviour
     private LevelManager _levelManager;
 
     [Inject]
-    private AssetManager _assetManager;
+    private ResourceManager _resourceManager;
 
     private void Start()
     {
@@ -33,6 +33,6 @@ public class MainMenuController : MonoBehaviour
 
     private void OnLevelSelected(string levelName) { _levelManager.LoadAsync(levelName).Forget(); }
 
-    private void OnAddressablesLogButtonClicked() { _assetManager.LogLoadedAssets(); }
+    private void OnAddressablesLogButtonClicked() { _resourceManager.LogLoadedAssets(); }
 }
 }

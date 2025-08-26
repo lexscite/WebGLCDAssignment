@@ -19,6 +19,12 @@ public class Debug : IStartable
         _instance._devOverlay.AddConsoleEntry(o.ToString(), ConsoleEntryType.Default);
     }
 
+    public static void LogWarning(object o)
+    {
+        UnityEngine.Debug.LogWarning(o);
+        _instance._devOverlay.AddConsoleEntry(o.ToString(), ConsoleEntryType.Warning);
+    }
+
     public static void LogError(object o)
     {
         UnityEngine.Debug.LogError(o);

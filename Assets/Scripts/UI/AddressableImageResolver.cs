@@ -16,16 +16,16 @@ public class AddressableImageResolver : MonoBehaviour
     public Image _targetImage;
 
     [Inject]
-    private AssetManager _assetManager;
+    private ResourceManager _resourceManager;
 
     private AsyncOperationHandle<Sprite> _handle;
 
-    private void Start() { _assetManager.Load<Sprite>(_spriteReference).Completed += OnSpriteLoaded; }
+    private void Start() { _resourceManager.LoadAsset<Sprite>(_spriteReference).Completed += OnSpriteLoaded; }
 
     private void OnDestroy()
     {
         _targetImage.sprite = null;
-        _assetManager.Unload(_spriteReference);
+        _resourceManager.ReleaseAsset(_spriteReference);
     }
 
     private void OnSpriteLoaded(AsyncOperationHandle<Sprite> handle)

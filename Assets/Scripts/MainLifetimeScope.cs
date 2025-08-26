@@ -11,7 +11,7 @@ public class MainLifetimeScope : LifetimeScope
         builder.RegisterEntryPoint<Debug>();
 
         builder.RegisterEntryPoint<Initializer>();
-        builder.Register<AssetManager>(Lifetime.Singleton);
+        builder.Register<ResourceManager>(Lifetime.Singleton);
         builder.Register<LevelManager>(Lifetime.Singleton);
         builder.RegisterComponentInHierarchy<LoadingOverlayController>();
     }

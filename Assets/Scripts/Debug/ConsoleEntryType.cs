@@ -3,6 +3,7 @@
 public enum ConsoleEntryType
 {
     Default = 0,
-    Error = 1,
+    Warning = 1,
+    Error = 2,
 }
 }
