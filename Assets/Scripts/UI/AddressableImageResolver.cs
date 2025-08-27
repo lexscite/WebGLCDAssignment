@@ -20,7 +20,10 @@ public class AddressableImageResolver : MonoBehaviour
 
     private AsyncOperationHandle<Sprite> _handle;
 
-    private void Start() { _resourceManager.LoadAsset<Sprite>(_spriteReference).Completed += OnSpriteLoaded; }
+    private void Start()
+    {
+        _resourceManager.LoadAsset<Sprite>(_spriteReference).ConvertedHandle.Completed += OnSpriteLoaded;
+    }
 
     private void OnDestroy()
     {

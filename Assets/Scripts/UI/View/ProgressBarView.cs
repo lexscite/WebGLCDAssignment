@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Globalization;
+using TMPro;
 using UnityEngine;
 
 namespace WebGLCD
@@ -11,15 +12,15 @@ public class ProgressBarView : MonoBehaviour
     [SerializeField]
     private TMP_Text _tmpValue;
 
-    public void SetValue(float value)
+    public void SetValue(float value, string additionalInfo = null)
     {
-        _tmpValue.SetText($"{Mathf.RoundToInt(value) * 100}%");
-        UpdateForeground(value);
-    }
+        var text = $"{(value * 100).ToString("F1", CultureInfo.InvariantCulture)}%";
+        if (additionalInfo != null)
+        {
+            text += $"({additionalInfo})";
+        }
 
-    public void SetValue(float value, string additionalInfo)
-    {
-        _tmpValue.SetText($"{Mathf.RoundToInt(value) * 100} ({additionalInfo})%");
+        _tmpValue.SetText(text);
         UpdateForeground(value);
     }
 

@@ -1,7 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.UI;
+﻿using UnityEngine;
 
 namespace WebGLCD
 {
@@ -24,15 +21,9 @@ public class LoadingOverlayController : MonoBehaviour
 
     public void StopLoading() { _view.SetCloseButtonActive(true); }
 
-    public void SetAsyncOperationHandle(AsyncOperationHandle handle) { ProcessAsyncOperationAsync(handle).Forget(); }
-
-    private async UniTaskVoid ProcessAsyncOperationAsync(AsyncOperationHandle handle)
+    public void UpdateProgressBar(float value, string additionalInfo = null)
     {
-        while (!handle.IsDone)
-        {
-            _progressBar.SetValue(handle.PercentComplete);
-            await UniTask.Yield();
-        }
+        _progressBar.SetValue(value, additionalInfo);
     }
 }
 }

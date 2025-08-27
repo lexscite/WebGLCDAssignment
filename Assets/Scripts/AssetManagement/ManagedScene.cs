@@ -3,79 +3,31 @@ using Cysharp.Threading.Tasks;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.SceneManagement;
 
 namespace WebGLCD
 {
 public class ManagedScene : ManagedResource
 {
-    private const int MaxRetries = 3;
-    private const float RetryDelay = 0.5f;
+    public AsyncOperationHandle<SceneInstance> ConvertedHandle { get; }
 
-    public AsyncOperationHandle<SceneInstance> Handle { get; }
-
-    public ManagedScene(string key, AsyncOperationHandle<SceneInstance> handle)
+    public ManagedScene(string key)
         : base(key)
     {
+        var handle = Addressables.LoadSceneAsync(key, LoadSceneMode.Additive);
         Handle = handle;
-    }
-
-    public async UniTask LoadAsync()
-    {
-        State = ResourceState.Loading;
-        Count++;
-
-        var attempt = 0;
-
-        while (attempt < MaxRetries)
-        {
-            try
-            {
-                attempt++;
-
-                Debug.Log($"Started scene loading (attempt {attempt}): {Key}");
-                await Handle;
-
-                if (Handle.Status == AsyncOperationStatus.Succeeded)
-                {
-                    Debug.Log("Scene loaded: " + Key);
-                    State = ResourceState.Unloaded;
-                    return;
-                }
-
-                OnError();
-                Debug.LogError("Scene loading error: " + Key);
-            }
-            catch (Exception e)
-            {
-                OnError();
-                Debug.LogError($"Scene loading exception {Key}: {e}");
-            }
-
-            await UniTask.Delay((int)(RetryDelay * 1000));
-        }
-
-        OnError();
-        Debug.LogError($"Scene {Key} failed to load after {MaxRetries} attempts");
-        State = ResourceState.Failed;
-
-        return;
-
-        void OnError()
-        {
-            Count--;
-            State = ResourceState.Failed;
-            Addressables.Release(Handle);
-        }
+        ConvertedHandle = handle;
     }
 
     public async UniTask ReleaseAsync()
     {
         try
         {
-            Count--;
-            if (Count > 0) return;
+            RefCount--;
+            if (RefCount > 0) return;
 
             await Addressables.UnloadSceneAsync(Handle);
+            State = ResourceState.Unloaded;
         }
         catch (Exception e)
         {

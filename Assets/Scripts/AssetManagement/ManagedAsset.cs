@@ -1,80 +1,43 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace WebGLCD
 {
-public class ManagedAsset : ManagedResource
+public class ManagedAsset<TObject> : ManagedAsset where TObject : UnityEngine.Object
 {
-    private const int MaxRetries = 3;
-    private const float RetryDelay = 0.5f;
+    public AsyncOperationHandle<TObject> ConvertedHandle { get; }
 
-    public AsyncOperationHandle Handle { get; }
-
-    public ManagedAsset(string key, AsyncOperationHandle handle)
+    public ManagedAsset(string key)
         : base(key)
     {
-        Handle = handle;
-    }
-
-    public async UniTask LoadAsync()
-    {
-        State = ResourceState.Loading;
-        Count++;
-
-        var attempt = 0;
-
-        while (attempt < MaxRetries)
+        try
         {
-            try
-            {
-                attempt++;
-
-                Debug.Log($"Started asset loading (attempt {attempt}): {Key}");
-                await Handle;
-
-                if (Handle.Status == AsyncOperationStatus.Succeeded)
-                {
-                    State = ResourceState.Loaded;
-                    Debug.Log("Asset loaded: " + Key);
-                    return;
-                }
-
-                OnError();
-                Debug.LogError("Asset loading error: " + Key);
-            }
-            catch (Exception e)
-            {
-                OnError();
-                Debug.LogError($"Asset loading exception {Key}: {e}");
-            }
-
-            await UniTask.Delay((int)(RetryDelay * 1000));
+            var handle = Addressables.LoadAssetAsync<TObject>(key);
+            Handle = handle;
+            ConvertedHandle = handle;
         }
-
-        OnError();
-        Debug.LogError($"Asset {Key} failed to load after {MaxRetries} attempts");
-        State = ResourceState.Failed;
-
-        return;
-
-        void OnError()
+        catch (Exception e)
         {
-            Count--;
-            Addressables.Release(Handle);
+            Debug.LogError($"Asset creation exception ({key}): {e}");
+            State = ResourceState.Failed;
         }
     }
+}
 
-    public void AddReference()
-    {
-        Count++;
-    }
+public abstract class ManagedAsset : ManagedResource
+{
+    protected ManagedAsset(string key)
+        : base(key) { }
+
+    public void AddReference() { RefCount++; }
 
     public void Release()
     {
-        Count--;
-        if (Count > 0) return;
+        RefCount--;
+        if (RefCount > 0) return;
         Unload();
     }
 
@@ -82,7 +45,7 @@ public class ManagedAsset : ManagedResource
     {
         try
         {
-            Addressables.Release(Handle);
+            if (Handle.IsValid()) Addressables.Release(Handle);
             State = ResourceState.Unloaded;
         }
         catch (Exception e)

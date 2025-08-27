@@ -18,7 +18,11 @@ public class ErrorPopupView : MonoBehaviour
     [SerializeField]
     private Button _btnDismiss;
 
-    private void Start() { _btnDismiss.onClick.AddListener(OnDismissButtonClick); }
+    private void Start()
+    {
+        _btnDismiss.onClick.AddListener(OnDismissButtonClick);
+        Hide();
+    }
 
     private void OnDestroy() { _btnDismiss.onClick.RemoveListener(OnDismissButtonClick); }
 

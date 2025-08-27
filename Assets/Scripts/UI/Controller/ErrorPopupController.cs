@@ -1,9 +1,12 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace WebGLCD
 {
 public class ErrorPopupController : MonoBehaviour
 {
+    public event Action Dismissed;
+
     [SerializeField]
     private ErrorPopupView _view;
 
@@ -17,6 +20,6 @@ public class ErrorPopupController : MonoBehaviour
 
     public void Show(string msg) { _view.Show(msg); }
 
-    private void OnDismissed() { }
+    private void OnDismissed() { Dismissed?.Invoke(); }
 }
 }

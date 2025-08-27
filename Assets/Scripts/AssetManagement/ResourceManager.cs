@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceProviders;
-using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace WebGLCD
@@ -13,6 +11,8 @@ namespace WebGLCD
 [UsedImplicitly(ImplicitUseKindFlags.Assign)]
 public class ResourceManager
 {
+    public event Action LoadingFailed;
+
     private readonly Dictionary<string, ManagedAsset> _assets;
     private readonly Dictionary<string, ManagedScene> _scenes;
 
@@ -22,21 +22,27 @@ public class ResourceManager
         _scenes = new Dictionary<string, ManagedScene>();
     }
 
-    public AsyncOperationHandle<TObject> LoadAsset<TObject>(AssetReference reference) where TObject : Object
+    public ManagedAsset<TObject> LoadAsset<TObject>(AssetReference reference) where TObject : Object
     {
         var key = reference.RuntimeKey.ToString();
+        return LoadAsset<TObject>(key);
+    }
 
+    public ManagedAsset<TObject> LoadAsset<TObject>(string key) where TObject : Object
+    {
         if (!_assets.TryGetValue(key, out var asset))
         {
-            var handle = reference.LoadAssetAsync<TObject>();
-            asset = new ManagedAsset(key, handle);
+            asset = new ManagedAsset<TObject>(key);
             _assets.Add(key, asset);
-            asset.LoadAsync().Forget();
-            return handle;
+            asset.LoadAsync(OnLoadingFailed).Forget();
+            return (ManagedAsset<TObject>)asset;
         }
 
         asset.AddReference();
-        return asset.Handle.Convert<TObject>();
+
+        if (asset.State == ResourceState.Failed) LoadingFailed?.Invoke();
+
+        return (ManagedAsset<TObject>)asset;
     }
 
     public void ReleaseAsset(AssetReference reference)
@@ -48,19 +54,21 @@ public class ResourceManager
         if (asset.State == ResourceState.Unloaded) _assets.Remove(key);
     }
 
-    public AsyncOperationHandle<SceneInstance> LoadScene(string key)
+    public ManagedScene LoadScene(string key)
     {
         if (_scenes.TryGetValue(key, out var scene))
         {
             Debug.LogError($"Trying to load already loaded scene: {key}");
-            return scene.Handle;
+            return scene;
         }
 
-        var handle = Addressables.LoadSceneAsync(key, LoadSceneMode.Additive);
-        scene = new ManagedScene(key, handle);
+        scene = new ManagedScene(key);
         _scenes.Add(key, scene);
-        scene.LoadAsync().Forget();
-        return handle;
+        scene.LoadAsync(OnLoadingFailed).Forget();
+
+        if (scene.State == ResourceState.Failed) LoadingFailed?.Invoke();
+
+        return scene;
     }
 
     public async UniTask UnloadSceneAsync(string key)
@@ -83,7 +91,7 @@ public class ResourceManager
         var unloadedKeys = new List<string>();
         foreach (var (key, asset) in _assets)
         {
-            if (asset.Count > 0) continue;
+            if (asset.RefCount > 0) continue;
             asset.Unload();
             if (asset.State == ResourceState.Unloaded) unloadedKeys.Add(key);
         }
@@ -94,6 +102,8 @@ public class ResourceManager
         }
     }
 
+    private void OnLoadingFailed() { LoadingFailed?.Invoke(); }
+
     public void LogLoadedAssets()
     {
         var sb = new StringBuilder();
@@ -101,27 +111,45 @@ public class ResourceManager
         var hasAssets = _assets.Count > 0;
         if (hasAssets)
         {
-            sb.AppendLine("Loaded assets:");
+            sb.AppendLine($"Loaded assets {_assets.Count}:");
 
             foreach (var (_, asset) in _assets)
             {
-                sb.AppendLine($"{asset.Key}: {asset.Count}");
+                sb.AppendLine($"{asset.Key}: {asset.RefCount}");
+                if (asset.DependencyInfos.Count > 0)
+                {
+                    foreach (var dependencyInfo in asset.DependencyInfos)
+                    {
+                        sb.AppendLine(dependencyInfo.ToString());
+                    }
+                }
             }
         }
 
         var hasScenes = _scenes.Count > 0;
         if (hasScenes)
         {
-            sb.AppendLine();
-            sb.AppendLine("Loaded scenes:");
+            if (hasAssets) sb.AppendLine();
+            sb.AppendLine($"Loaded scenes {_scenes.Count}:");
 
             foreach (var (_, scene) in _scenes)
             {
                 sb.AppendLine($"{scene.Key}");
+                if (scene.DependencyInfos.Count > 0)
+                {
+                    foreach (var dependencyInfo in scene.DependencyInfos)
+                    {
+                        sb.AppendLine(dependencyInfo.ToString());
+                    }
+                }
             }
         }
 
-        if (hasAssets || hasScenes) Debug.Log(sb.ToString());
+        if (hasAssets || hasScenes)
+        {
+            Debug.Log(string.Empty);
+            Debug.Log(sb.ToString());
+        }
     }
 }
 }

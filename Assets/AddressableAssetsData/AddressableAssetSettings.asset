@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: 8581f31274d7e524db95909e8797a41e
   m_currentHash:
     serializedVersion: 2
-    Hash: 9fe416c828df058e36933cbdcc83aa95
+    Hash: af49597b0d56a58384d60a47c1e01475
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 0
   m_CatalogRequestsTimeout: 0
@@ -100,7 +100,7 @@ MonoBehaviour:
       m_ProfileName: Stage
       m_Values:
       - m_Id: 33244f0353317244b86bc98fea721a07
-        m_Value: http://localhost:8080/Bundles/[BuildTarget]/Stage
+        m_Value: https://lexscite.github.io/WebGLCDAssignment/Bundles/[BuildTarget]/Stage
       - m_Id: 3d1d0935dc0dd8645a4130674d9f6db1
         m_Value: '[UnityEditor.EditorUserBuildSettings.activeBuildTarget]'
       - m_Id: 748cd7a8a4caf704987847f4616b7f65
@@ -154,4 +154,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ef19b86246f03d44fa60ffa7de3a4ee5, type: 2}
   - {fileID: 11400000, guid: d306c667e8245654ca4c0e9518a89a01, type: 2}
   - {fileID: 11400000, guid: a4db33488ab8fcd4f9274305199cb697, type: 2}
-  m_ActiveProfileId: e9ac4ac893c35bc45b656986c5f09c1a
+  m_ActiveProfileId: d30934c3bfd7a0548ad616ca0f9dd6cb
