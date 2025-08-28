@@ -30,7 +30,7 @@ public class ResourceManager
         return LoadAsset(key, callback);
     }
 
-    public ManagedAsset<TObject> LoadAsset<TObject>(string key, Action<TObject> callback) where TObject : Object
+    private ManagedAsset<TObject> LoadAsset<TObject>(string key, Action<TObject> callback) where TObject : Object
     {
         if (!_assets.TryGetValue(key, out var asset))
         {

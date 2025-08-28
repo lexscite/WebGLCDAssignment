@@ -1,5 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
 using VContainer;
 
@@ -14,7 +15,12 @@ public class MainMenuController : MonoBehaviour
     private Button _addressablesLogButton;
 
     [SerializeField]
+    private AssetReferenceSprite _loadSpriteButtonSpriteReference;
+
+    [SerializeField]
     private Button _loadSpriteButton;
+
+    private bool _loadSpriteButtonSpriteLoaded;
 
     [Inject]
     private SceneManager _sceneManager;
@@ -57,7 +63,10 @@ public class MainMenuController : MonoBehaviour
 
     private void OnLoadSpriteButtonClicked()
     {
-        _resourceManager.LoadAsset<Sprite>("Assets/Textures/UI/Background.png[Background_0]",
+        if (_loadSpriteButtonSpriteLoaded) return;
+
+        _loadSpriteButtonSpriteLoaded = true;
+        _resourceManager.LoadAsset<Sprite>(_loadSpriteButtonSpriteReference,
             sprite => { _loadSpriteButton.image.sprite = sprite; });
     }
 }

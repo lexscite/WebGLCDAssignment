@@ -35,13 +35,14 @@ public abstract class ManagedResource
 
     public async UniTask LoadAsync(Action onSuccess, Action onFailed)
     {
-        if (State is ResourceState.Loaded)
+        if (State == ResourceState.Loaded)
         {
             RefCount++;
+            onSuccess?.Invoke();
             return;
         }
 
-        if (State is ResourceState.Loading)
+        if (State == ResourceState.Loading)
         {
             RefCount++;
             await UniTask.WaitUntil(() => State != ResourceState.Loading);
