@@ -18,7 +18,7 @@ public class Initializer : IStartable
             "<b>Hello! Use the on-screen buttons to test all ResourceManager features.</b>\n\n<b>Significant info will be printed here.</b>\n");
 
         #if UNITY_EDITOR
-        Caching.ClearCache();
+        // Caching.ClearCache();
         Debug.Log("Cache cleared");
         #endif
     }

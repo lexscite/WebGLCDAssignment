@@ -40,10 +40,10 @@ public class SceneManager
         while (!handle.IsDone)
         {
             var percentComplete = handle.PercentComplete;
-            var sizeMb = managedScene.TotalSize / 1024f / 1024f;
-            var additionalInfo = managedScene.DependenciesRetrieved
+            var sizeMb = managedScene.DownloadSize / 1024f / 1024f;
+            var additionalInfo = managedScene.DependenciesRetrieved && sizeMb > 0
                 ? $"{(sizeMb * percentComplete).ToString("F2", CultureInfo.InvariantCulture)}/{sizeMb.ToString("F2", CultureInfo.InvariantCulture)}mb"
-                : "calculating size...";
+                : null;
             _loadingOverlayController.UpdateProgressBar(percentComplete, additionalInfo);
             await UniTask.Yield();
         }

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace WebGLCD
 {
@@ -17,7 +19,7 @@ public abstract class ManagedResource
     public AsyncOperationHandle Handle { get; protected set; }
     public readonly List<DependencyInfo> DependencyInfos;
 
-    public long TotalSize { get; private set; }
+    public long DownloadSize { get; private set; }
 
     public bool DependenciesRetrieved { get; private set; }
 
@@ -36,6 +38,9 @@ public abstract class ManagedResource
         State = ResourceState.Loading;
         RefCount++;
 
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
         var attempt = 0;
 
         while (attempt < MaxRetries)
@@ -51,7 +56,8 @@ public abstract class ManagedResource
                 if (Handle.Status == AsyncOperationStatus.Succeeded)
                 {
                     State = ResourceState.Loaded;
-                    Debug.Log("Asset loaded: " + Key);
+                    stopwatch.Stop();
+                    Debug.Log($"Asset loaded in {stopwatch.Elapsed.ToPrettyString()}: {Key}");
                     return;
                 }
 
@@ -65,6 +71,7 @@ public abstract class ManagedResource
             await UniTask.Delay((int)(RetryDelay * 1000));
         }
 
+        stopwatch.Stop();
         State = ResourceState.Failed;
         if (Handle.IsValid()) Addressables.Release(Handle);
         RefCount--;
@@ -75,36 +82,45 @@ public abstract class ManagedResource
     private async UniTask CollectInfoAsync()
     {
         var locationsHandle = Addressables.LoadResourceLocationsAsync(Key);
-        await locationsHandle;
 
-        var locations = locationsHandle.Result;
-        var locationsToDownload = new HashSet<IResourceLocation>();
-
-        foreach (var location in locations)
+        try
         {
-            CollectDependencies(location, locationsToDownload);
-        }
+            await locationsHandle;
 
-        if (locationsToDownload.Count > 0)
-        {
-            Debug.Log("Dependencies found:");
-            foreach (var location in locationsToDownload)
+            var locations = locationsHandle.Result;
+            var locationsToDownload = new HashSet<IResourceLocation>();
+
+            foreach (var location in locations)
             {
-                var sizeHandle = Addressables.GetDownloadSizeAsync(location).Task;
-                var size = sizeHandle.Result;
-
-                TotalSize += size;
-                var source = GetBundleSource(location);
-                var dependency = new DependencyInfo(location.PrimaryKey, location.InternalId, source, size);
-                DependencyInfos.Add(dependency);
-                Debug.Log(dependency);
+                CollectDependencies(location, locationsToDownload);
             }
+
+            var sb = new StringBuilder();
+
+            if (locationsToDownload.Count > 0)
+            {
+                sb.AppendLine("Dependencies found:");
+                foreach (var location in locationsToDownload)
+                {
+                    var sizeHandle = Addressables.GetDownloadSizeAsync(location).Task;
+                    var size = sizeHandle.Result;
+                    var source = GetBundleSource(location, size);
+                    if (source == AssetSource.Remote) DownloadSize += size;
+                    if (source == AssetSource.None) continue;
+                    var dependency = new DependencyInfo(location.PrimaryKey, location.InternalId, source, size);
+                    DependencyInfos.Add(dependency);
+                    sb.AppendLine(dependency.ToString());
+                }
+            }
+
+            sb.AppendLine($"Total size: {DownloadSize / 1024f:F2}KB");
+            DependenciesRetrieved = true;
+            Debug.Log(sb.ToString());
         }
-
-        Debug.Log($"Total size: {TotalSize / 1024f:F2}KB");
-        if (Handle.IsValid()) Addressables.Release(locationsHandle);
-
-        DependenciesRetrieved = true;
+        finally
+        {
+            if (Handle.IsValid()) Addressables.Release(locationsHandle);
+        }
     }
 
     private void CollectDependencies(IResourceLocation loc, HashSet<IResourceLocation> set)
@@ -119,11 +135,14 @@ public abstract class ManagedResource
         }
     }
 
-    private AssetSource GetBundleSource(IResourceLocation loc)
+    private AssetSource GetBundleSource(IResourceLocation location, long size)
     {
-        var id = loc.InternalId;
-        if (id.StartsWith("http://") || id.StartsWith("https://")) return AssetSource.Remote;
-        return AssetSource.Local;
+        if (location.Data is not AssetBundleRequestOptions) return AssetSource.None;
+
+        var id = location.InternalId;
+        if (!id.StartsWith("http://") && !id.StartsWith("https://")) return AssetSource.Local;
+
+        return size > 0 ? AssetSource.Remote : AssetSource.Cache;
     }
 }
 }

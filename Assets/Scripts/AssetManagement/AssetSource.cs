@@ -2,7 +2,9 @@
 {
 public enum AssetSource
 {
-    Local = 0,
-    Remote = 1
+    None = 0,
+    Local = 1,
+    Remote = 2,
+    Cache = 3,
 }
 }
