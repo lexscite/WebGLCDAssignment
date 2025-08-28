@@ -29,10 +29,7 @@ public class SceneManager
 
         _loadingOverlayController.StartLoading();
 
-        if (!string.IsNullOrEmpty(_currentLevelSceneKey))
-        {
-            await _resourceManager.UnloadSceneAsync(_currentLevelSceneKey);
-        }
+        await UnloadAsync(false);
 
         _currentLevelSceneKey = key;
         var managedScene = _resourceManager.LoadScene(_currentLevelSceneKey);
@@ -40,8 +37,8 @@ public class SceneManager
         while (!handle.IsDone)
         {
             var percentComplete = handle.PercentComplete;
-            var sizeMb = managedScene.DownloadSize / 1024f / 1024f;
-            var additionalInfo = managedScene.DependenciesRetrieved && sizeMb > 0
+            var sizeMb = managedScene.TotalSize / 1024f / 1024f;
+            var additionalInfo = managedScene.InfoRetrieved && sizeMb > 0
                 ? $"{(sizeMb * percentComplete).ToString("F2", CultureInfo.InvariantCulture)}/{sizeMb.ToString("F2", CultureInfo.InvariantCulture)}mb"
                 : null;
             _loadingOverlayController.UpdateProgressBar(percentComplete, additionalInfo);
@@ -53,6 +50,21 @@ public class SceneManager
         if (managedScene.State == ResourceState.Loaded)
         {
             _loadingOverlayController.StopLoading();
+        }
+    }
+
+    public async UniTask UnloadAsync(bool unloadUnusedAssets = true)
+    {
+        if (!string.IsNullOrEmpty(_currentLevelSceneKey))
+        {
+            await _resourceManager.UnloadSceneAsync(_currentLevelSceneKey);
+            _currentLevelSceneKey = null;
+
+            if (unloadUnusedAssets) _resourceManager.UnloadUnusedAssets();
+        }
+        else
+        {
+            Debug.LogWarning("There's no loaded level to unload");
         }
     }
 }

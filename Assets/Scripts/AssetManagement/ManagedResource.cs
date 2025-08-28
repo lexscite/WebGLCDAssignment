@@ -17,11 +17,11 @@ public abstract class ManagedResource
 
     public readonly string Key;
     public AsyncOperationHandle Handle { get; protected set; }
-    public readonly List<DependencyInfo> DependencyInfos;
+    public readonly List<LocationInfo> LocationInfos;
 
-    public long DownloadSize { get; private set; }
+    public long TotalSize { get; private set; }
 
-    public bool DependenciesRetrieved { get; private set; }
+    public bool InfoRetrieved { get; private set; }
 
     public ResourceState State { get; protected set; }
 
@@ -30,16 +30,38 @@ public abstract class ManagedResource
     protected ManagedResource(string key)
     {
         Key = key;
-        DependencyInfos = new List<DependencyInfo>();
+        LocationInfos = new List<LocationInfo>();
     }
 
-    public async UniTask LoadAsync(Action onFailed)
+    public async UniTask LoadAsync(Action onSuccess, Action onFailed)
     {
+        if (State is ResourceState.Loaded)
+        {
+            RefCount++;
+            return;
+        }
+
+        if (State is ResourceState.Loading)
+        {
+            RefCount++;
+            await UniTask.WaitUntil(() => State != ResourceState.Loading);
+            switch (State)
+            {
+            case ResourceState.Loaded:
+                onSuccess?.Invoke();
+                break;
+            case ResourceState.Failed:
+                RefCount--;
+                break;
+            }
+
+            return;
+        }
+
         State = ResourceState.Loading;
         RefCount++;
 
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
+        var stopwatch = Stopwatch.StartNew();
 
         var attempt = 0;
 
@@ -58,6 +80,7 @@ public abstract class ManagedResource
                     State = ResourceState.Loaded;
                     stopwatch.Stop();
                     Debug.Log($"Asset loaded in {stopwatch.Elapsed.ToPrettyString()}: {Key}");
+                    onSuccess?.Invoke();
                     return;
                 }
 
@@ -99,22 +122,22 @@ public abstract class ManagedResource
 
             if (locationsToDownload.Count > 0)
             {
-                sb.AppendLine("Dependencies found:");
+                sb.AppendLine("Locations found:");
                 foreach (var location in locationsToDownload)
                 {
-                    var sizeHandle = Addressables.GetDownloadSizeAsync(location).Task;
+                    var sizeHandle = Addressables.GetDownloadSizeAsync(location);
+                    await sizeHandle;
                     var size = sizeHandle.Result;
-                    var source = GetBundleSource(location, size);
-                    if (source == AssetSource.Remote) DownloadSize += size;
-                    if (source == AssetSource.None) continue;
-                    var dependency = new DependencyInfo(location.PrimaryKey, location.InternalId, source, size);
-                    DependencyInfos.Add(dependency);
+                    var source = GetBundleSource(location);
+                    TotalSize += size;
+                    var dependency = new LocationInfo(location.PrimaryKey, location.InternalId, source, size);
+                    LocationInfos.Add(dependency);
                     sb.AppendLine(dependency.ToString());
                 }
             }
 
-            sb.AppendLine($"Total size: {DownloadSize / 1024f:F2}KB");
-            DependenciesRetrieved = true;
+            sb.AppendLine($"Total size: {TotalSize / 1024f:F2}KB");
+            InfoRetrieved = true;
             Debug.Log(sb.ToString());
         }
         finally
@@ -135,14 +158,16 @@ public abstract class ManagedResource
         }
     }
 
-    private AssetSource GetBundleSource(IResourceLocation location, long size)
+    private ResourceLocationType GetBundleSource(IResourceLocation location)
     {
-        if (location.Data is not AssetBundleRequestOptions) return AssetSource.None;
+        if (location.Data is AssetBundleRequestOptions == false) return ResourceLocationType.None;
 
-        var id = location.InternalId;
-        if (!id.StartsWith("http://") && !id.StartsWith("https://")) return AssetSource.Local;
+        if (location.InternalId.StartsWith("http://") || location.InternalId.StartsWith("https://"))
+        {
+            return ResourceLocationType.Remote;
+        }
 
-        return size > 0 ? AssetSource.Remote : AssetSource.Cache;
+        return ResourceLocationType.Local;
     }
 }
 }

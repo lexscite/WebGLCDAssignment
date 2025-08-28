@@ -32,8 +32,6 @@ public abstract class ManagedAsset : ManagedResource
     protected ManagedAsset(string key)
         : base(key) { }
 
-    public void AddReference() { RefCount++; }
-
     public void Release()
     {
         RefCount--;

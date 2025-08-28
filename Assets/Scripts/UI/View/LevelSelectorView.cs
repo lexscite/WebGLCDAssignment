@@ -1,15 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace WebGLCD
 {
 public class LevelSelectorView : MonoBehaviour
 {
     public event Action<string> LevelSelected;
+    public event Action UnloadRequested;
 
     [SerializeField]
     private List<LevelButtonView> _levelButtons;
+
+    [SerializeField]
+    private Button _unloadButton;
 
     private void Start()
     {
@@ -17,6 +22,8 @@ public class LevelSelectorView : MonoBehaviour
         {
             levelButton.Clicked += OnLevelButtonClicked;
         }
+
+        _unloadButton.onClick.AddListener(OnUnloadButtonClicked);
     }
 
     private void OnDestroy()
@@ -25,6 +32,8 @@ public class LevelSelectorView : MonoBehaviour
         {
             levelButton.Clicked -= OnLevelButtonClicked;
         }
+
+        _unloadButton.onClick.RemoveListener(OnUnloadButtonClicked);
     }
 
     private void OnLevelButtonClicked(int levelNum)
@@ -32,5 +41,7 @@ public class LevelSelectorView : MonoBehaviour
         var levelName = $"Level_{levelNum}";
         LevelSelected?.Invoke(levelName);
     }
+
+    private void OnUnloadButtonClicked() { UnloadRequested?.Invoke(); }
 }
 }

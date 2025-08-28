@@ -22,19 +22,13 @@ public class AddressableImageResolver : MonoBehaviour
 
     private void Start()
     {
-        _resourceManager.LoadAsset<Sprite>(_spriteReference).ConvertedHandle.Completed += OnSpriteLoaded;
+        _resourceManager.LoadAsset<Sprite>(_spriteReference, sprite => { _targetImage.sprite = sprite; });
     }
 
     private void OnDestroy()
     {
         _targetImage.sprite = null;
         _resourceManager.ReleaseAsset(_spriteReference);
-    }
-
-    private void OnSpriteLoaded(AsyncOperationHandle<Sprite> handle)
-    {
-        if (handle.Status == AsyncOperationStatus.Succeeded && _targetImage != null)
-            _targetImage.sprite = handle.Result;
     }
 }
 }
