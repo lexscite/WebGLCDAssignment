@@ -92,6 +92,7 @@ fmod_editor.log
 /Assets/Plugins/FMOD/Cache/Editor/FMODStudioCache.asset
 /Assets/Plugins/FMOD/Cache/Editor/FMODStudioCache.asset.meta
 
+.utmp
 /ServerData/StandaloneWindows64/Dev
 /ServerData/StandaloneWindows64/Stage
 /ServerData/WebGL/Dev
